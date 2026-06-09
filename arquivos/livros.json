@@ -1,0 +1,34 @@
+[
+    {
+        "isbn": "978-85-333-0227-3",
+        "titulo": "Dom Casmurro",
+        "autor": "Machado de Assis",
+        "ano_publicacao": 1899,
+        "genero": "Romance",
+        "status": "disponivel"
+    },
+    {
+        "isbn": "978-85-359-0277-5",
+        "titulo": "O Cortiço",
+        "autor": "Aluísio Azevedo",
+        "ano_publicacao": 1890,
+        "genero": "Naturalismo",
+        "status": "emprestado"
+    },
+    {
+        "isbn": "978-85-260-0468-8",
+        "titulo": "Memórias Póstumas de Brás Cubas",
+        "autor": "Machado de Assis",
+        "ano_publicacao": 1881,
+        "genero": "Romance",
+        "status": "disponivel"
+    },
+    {
+        "isbn": "978-85-7326-405-5",
+        "titulo": "A Moreninha",
+        "autor": "Joaquim Manuel de Macedo",
+        "ano_publicacao": 1844,
+        "genero": "Romance",
+        "status": "disponivel"
+    }
+]

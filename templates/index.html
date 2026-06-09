@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block titulo %}Início — Biblioteca{% endblock %}
+
+{% block conteudo %}
+<table border="">
+    <thead >
+        <tr>
+            <th>ISBN</th>
+            <th>Título</th>
+            <th>Autor</th>
+            <th>Ano de Publicação</th>
+            <th>Gênero</th>
+            <th>Situação</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for livro in livros %}
+        <tr>
+            <td>{{ livro.isbn }}</td>
+            <td>{{ livro.titulo }}</td>
+            <td>{{ livro.autor }}</td>
+            <td>{{ livro.ano_publicacao }}</td>
+            <td>{{ livro.genero }}</td>
+            <td>{{ livro.status }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
