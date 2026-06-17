@@ -30,5 +30,13 @@
         "ano_publicacao": 1844,
         "genero": "Romance",
         "status": "disponivel"
+    },
+    {
+        "isbn": "123",
+        "titulo": "123",
+        "autor": "123",
+        "ano_publicacao": 132,
+        "genero": "123",
+        "status": "disponivel"
     }
 ]

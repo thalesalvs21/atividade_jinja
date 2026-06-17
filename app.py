@@ -1,6 +1,6 @@
 import json
 import os
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect
 
 app = Flask(__name__)
 arquivo = "arquivos/livros.json"
@@ -55,6 +55,28 @@ def livros(isbn=None):
             return jsonify({"mensagem": "Livro atualizado!", "livro": livro})
     return jsonify({"erro": "Livro não encontrado."}), 404
 
+@app.route("/cadastro", methods=["GET", "POST"])
+def cadastro():
+    if request.method == "POST":
+        novo = {
+            "isbn": request.form["isbn"],
+            "titulo": request.form["titulo"],
+            "autor": request.form["autor"],
+            "ano_publicacao": int(request.form["ano_publicacao"]),
+            "genero": request.form["genero"],
+            "status": "disponivel"
+        }
+
+        livros = ler_livros()
+
+        if any(l["isbn"] == novo["isbn"] for l in livros):
+            return render_template("cadastro.html", erro="ISBN já cadastrado!")
+
+        livros.append(novo)
+        salvar_livros(livros)
+        return redirect("/")
+
+    return render_template("cadastro.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
