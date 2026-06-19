@@ -12,6 +12,7 @@
             <th>Ano de Publicação</th>
             <th>Gênero</th>
             <th>Situação</th>
+            <th>Ações</th>
         </tr>
     </thead>
     <tbody>
@@ -23,6 +24,7 @@
             <td>{{ livro.ano_publicacao }}</td>
             <td>{{ livro.genero }}</td>
             <td>{{ livro.status }}</td>
+            <td><a href="/editar/{{ livro.isbn }}">Editar</a></td>
         </tr>
         {% endfor %}
     </tbody>

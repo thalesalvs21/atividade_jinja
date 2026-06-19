@@ -78,5 +78,32 @@ def cadastro():
 
     return render_template("cadastro.html")
 
+@app.route("/editar/<isbn>", methods=["GET", "POST"])
+def editar(isbn):
+    livros = ler_livros()
+    livro = next((l for l in livros if l["isbn"] == isbn), None)
+    print("ISBN recebido na URL:", repr(isbn))
+    print("Livro encontrado:", livro)
+
+    if livro is None:
+        return "Livro não encontrado.", 404
+
+    if request.method == "POST":
+        print("Dados do formulário:", dict(request.form))
+
+        livro["titulo"] = request.form["titulo"]
+        livro["autor"] = request.form["autor"]
+        livro["ano_publicacao"] = int(request.form["ano_publicacao"])
+        livro["genero"] = request.form["genero"]
+        livro["status"] = request.form["status"]
+
+        print("Livro depois de atualizar:", livro)
+
+        salvar_livros(livros)
+        print("Salvou em:", os.path.abspath(arquivo))
+        return redirect("/")
+
+    return render_template("editar.html", livro=livro)
+
 if __name__ == "__main__":
     app.run(debug=True)
