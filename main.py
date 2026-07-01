@@ -1,27 +1,13 @@
-import json
-import os
+import dados
 from flask import Flask, request, jsonify, render_template, redirect
 
 app = Flask(__name__)
-arquivo = "arquivos/livros.json"
-
-
-def ler_livros():
-    if os.path.exists(arquivo):
-        with open(arquivo, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
-
-
-def salvar_livros(lista):
-    os.makedirs("arquivos", exist_ok=True)
-    with open(arquivo, "w", encoding="utf-8") as f:
-        json.dump(lista, f, ensure_ascii=False, indent=4)
+dados.init_db()
 
 
 @app.route("/")
 def index():
-    livros = ler_livros()
+    livros = dados.executar("SELECT * FROM livros")
     return render_template("index.html", livros=livros)
 
 
@@ -29,81 +15,95 @@ def index():
 @app.route("/livros/buscar", methods=["GET"])
 @app.route("/livros/<isbn>", methods=["PUT"])
 def livros(isbn=None):
-    livros = ler_livros()
-
     if request.path == "/livros/buscar":
         termo = request.args.get("q", "").lower()
-        return jsonify([l for l in livros if termo in l["titulo"].lower() or termo == l["isbn"]])
+        resultado = dados.executar(
+            "SELECT * FROM livros WHERE LOWER(titulo) LIKE ? OR isbn = ?",
+            (f"%{termo}%", termo)
+        )
+        return jsonify(resultado)
 
     if request.method == "GET":
-        return jsonify(livros)
+        return jsonify(dados.executar("SELECT * FROM livros"))
 
     if request.method == "POST":
         novo = request.get_json()
-        if any(l["isbn"] == novo["isbn"] for l in livros):
+
+        existe = dados.executar("SELECT isbn FROM livros WHERE isbn = ?", (novo["isbn"],))
+        if existe:
             return jsonify({"erro": "ISBN já cadastrado!"}), 400
-        novo.setdefault("status", "disponivel")
-        livros.append(novo)
-        salvar_livros(livros)
+
+        status = novo.get("status", "disponivel")
+        dados.executar(
+            "INSERT INTO livros (isbn, titulo, autor, ano_publicacao, genero, status) VALUES (?, ?, ?, ?, ?, ?)",
+            (novo["isbn"], novo["titulo"], novo["autor"], novo["ano_publicacao"], novo["genero"], status)
+        )
+        novo["status"] = status
         return jsonify({"mensagem": "Livro cadastrado com sucesso!", "livro": novo}), 201
 
+    resultado = dados.executar("SELECT * FROM livros WHERE isbn = ?", (isbn,))
+    if not resultado:
+        return jsonify({"erro": "Livro não encontrado."}), 404
+
+    livro = resultado[0]
     alteracoes = request.get_json()
-    for livro in livros:
-        if livro["isbn"] == isbn:
-            livro.update(alteracoes)
-            salvar_livros(livros)
-            return jsonify({"mensagem": "Livro atualizado!", "livro": livro})
-    return jsonify({"erro": "Livro não encontrado."}), 404
+    livro.update(alteracoes)
+    dados.executar(
+        "UPDATE livros SET titulo=?, autor=?, ano_publicacao=?, genero=?, status=? WHERE isbn=?",
+        (livro["titulo"], livro["autor"], livro["ano_publicacao"], livro["genero"], livro["status"], isbn)
+    )
+    return jsonify({"mensagem": "Livro atualizado!", "livro": livro})
+
 
 @app.route("/cadastro", methods=["GET", "POST"])
 def cadastro():
     if request.method == "POST":
-        novo = {
-            "isbn": request.form["isbn"],
-            "titulo": request.form["titulo"],
-            "autor": request.form["autor"],
-            "ano_publicacao": int(request.form["ano_publicacao"]),
-            "genero": request.form["genero"],
-            "status": "disponivel"
-        }
+        isbn = request.form["isbn"]
 
-        livros = ler_livros()
-
-        if any(l["isbn"] == novo["isbn"] for l in livros):
+        existe = dados.executar("SELECT isbn FROM livros WHERE isbn = ?", (isbn,))
+        if existe:
             return render_template("cadastro.html", erro="ISBN já cadastrado!")
 
-        livros.append(novo)
-        salvar_livros(livros)
+        dados.executar(
+            "INSERT INTO livros (isbn, titulo, autor, ano_publicacao, genero, status) VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                isbn,
+                request.form["titulo"],
+                request.form["autor"],
+                int(request.form["ano_publicacao"]),
+                request.form["genero"],
+                "disponivel"
+            )
+        )
         return redirect("/")
 
     return render_template("cadastro.html")
 
+
 @app.route("/editar/<isbn>", methods=["GET", "POST"])
 def editar(isbn):
-    livros = ler_livros()
-    livro = next((l for l in livros if l["isbn"] == isbn), None)
-    print("ISBN recebido na URL:", repr(isbn))
-    print("Livro encontrado:", livro)
-
-    if livro is None:
+    resultado = dados.executar("SELECT * FROM livros WHERE isbn = ?", (isbn,))
+    if not resultado:
         return "Livro não encontrado.", 404
 
+    livro = resultado[0]
+
     if request.method == "POST":
-        print("Dados do formulário:", dict(request.form))
-
-        livro["titulo"] = request.form["titulo"]
-        livro["autor"] = request.form["autor"]
-        livro["ano_publicacao"] = int(request.form["ano_publicacao"])
-        livro["genero"] = request.form["genero"]
-        livro["status"] = request.form["status"]
-
-        print("Livro depois de atualizar:", livro)
-
-        salvar_livros(livros)
-        print("Salvou em:", os.path.abspath(arquivo))
+        dados.executar(
+            "UPDATE livros SET titulo=?, autor=?, ano_publicacao=?, genero=?, status=? WHERE isbn=?",
+            (
+                request.form["titulo"],
+                request.form["autor"],
+                int(request.form["ano_publicacao"]),
+                request.form["genero"],
+                request.form["status"],
+                isbn
+            )
+        )
         return redirect("/")
 
     return render_template("editar.html", livro=livro)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
